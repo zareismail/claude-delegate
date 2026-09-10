@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Hand mechanical implementation work to a cheaper model (DeepSeek via opencode) running in an isolated git worktree, then review what comes back. Use when the user says "delegate this", "give it to deepseek", "farm this out", "run it in a worktree", or when a task is large but mechanical — repetitive edits across many files, applying an existing pattern, a settled migration or rename, tests against behaviour already specified. Also use when planning a big task that should be split into slices for a cheaper implementer. Works in any repository, and on a brand-new project with no git repo yet. If the  command is not found, run /delegate-setup once.
+description: Hand mechanical implementation work to a cheaper model (DeepSeek via opencode) running in an isolated git worktree, then review what comes back. Use when the user says "delegate this", "give it to deepseek", "farm this out", "run it in a worktree", or when a task is large but mechanical — repetitive edits across many files, applying an existing pattern, a settled migration or rename, tests against behaviour already specified. Also use when planning a big task that should be split into slices for a cheaper implementer. Works in any repository, and on a brand-new project with no git repo yet. If the `delegate` command is not found, run /delegate-setup once.
 ---
 
 # Delegating implementation work
