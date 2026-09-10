@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# delegate — hand a task to a cheaper implementer in an isolated git worktree.
+# The worktree IS the task record: it knows its repo, its name, its brief
+# (TASK.md) and its state (branch + git log). No database, no server.
+set -euo pipefail
+
+# Code lives with the plugin; worktrees and logs are the user's, and outlive it.
+HERE=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+ROOT="${DELEGATE_HOME:-$HOME/.delegate}"
+PROMPT="${DELEGATE_PROMPT:-$HERE/PROMPT.md}"
+# Make these exist once, here, rather than guarding every find and redirect that
+# touches them. A fresh install has neither, and `ls` is the first thing run.
+mkdir -p "$ROOT/wt" "$ROOT/logs"
+MODEL="${DELEGATE_MODEL:-deepseek/deepseek-v4-flash}"
+# Reasoning effort. Low means fewer, more consolidated tool calls — which is
+# where the wall-clock actually goes; generation rate is ~30 tok/s regardless.
+VARIANT="${DELEGATE_VARIANT:-low}"
+# Runaway backstop only. The real stop is the identical-failure guard below;
+# a round that fails *differently* is progress and earns another try.
+MAX_ROUNDS="${DELEGATE_MAX_ROUNDS:-4}"
+TIMEOUT="${DELEGATE_TIMEOUT:-3600}"
+
+die() { echo "delegate: $*" >&2; exit 1; }
+
+# A slug is unique across repos. Resolve it to exactly one worktree.
+wt_of() {
+  local hits n
+  hits=$(find "$ROOT/wt" -mindepth 2 -maxdepth 2 -type d -name "$1" 2>/dev/null || true)
+  [ -n "$hits" ] || die "no task '$1' (delegate ls)"
+  n=$(printf '%s\n' "$hits" | wc -l)
+  [ "$n" -eq 1 ] || die "slug '$1' matches $n worktrees"
+  printf '%s' "$hits"
+}
+
+# The repo says what its own base branch is. Works from the worktree too.
+# What a new task branches off, in order of preference: the remote's default
+# branch, else whatever branch is checked out. A brand-new app has no remote.
+base_of() {
+  git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null && return 0
+  git -C "$1" rev-parse --abbrev-ref HEAD 2>/dev/null
+}
+
+# Where this worktree's branch actually started — which is not origin/HEAD when
+# the task was stacked on another task's branch.
+fork_of() { git -C "$1" rev-parse "$(git -C "$1" config --get "branch.$(git -C "$1" branch --show-current).delegateBase")" 2>/dev/null \
+            || base_of "$1"; }
+
+run() { # run <worktree> <prompt> [extra opencode opts...]
+  local wt=$1 prompt=$2 rc=0 log; shift 2
+  log="$ROOT/logs/$(basename "$wt")-$(date +%s).log"
+  echo "delegate: $wt"
+  echo "delegate: log $log  (model $MODEL, effort $VARIANT)"
+  timeout "$TIMEOUT" opencode run --dir "$wt" --auto -m "$MODEL" --variant "$VARIANT" "$@" "$prompt" \
+    >"$log" 2>&1 || rc=$?
+  echo "delegate: opencode exit $rc"
+  return $rc
+}
+
+cmd_new() { # new <repo-path> <slug> [base]   (brief on stdin)
+  local repo slug name wt base f
+  [ $# -ge 2 ] && [ $# -le 3 ] || die "usage: delegate new <repo-path> <slug> [base]  (brief on stdin)"
+  # A brand-new app is a legitimate starting point: no repo, or a repo with no
+  # commits. A worktree needs a commit to branch from, so make one.
+  mkdir -p "$1"
+  git -C "$1" rev-parse --git-dir >/dev/null 2>&1 || git -C "$1" init -q
+  git -C "$1" rev-parse --verify --quiet HEAD >/dev/null \
+    || git -C "$1" commit -q --allow-empty -m "init"
+  repo=$(git -C "$1" rev-parse --show-toplevel)
+  slug=$2; name=$(basename "$repo"); wt="$ROOT/wt/$name/$slug"
+  [ -e "$wt" ] && die "task '$slug' already exists — use 'delegate rework $slug'"
+
+  git -C "$repo" remote get-url origin >/dev/null 2>&1 && git -C "$repo" fetch --quiet origin
+  # Default: the repo's own base branch. Override to stack a slice on top of a
+  # foundation commit — the pattern for one big task split across worktrees.
+  base=${3:-$(base_of "$repo")}
+  git -C "$repo" rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "no such base: $base"
+  mkdir -p "$(dirname "$wt")"
+  git -C "$repo" worktree add -q -b "ds/$slug" "$wt" "$base"
+  git -C "$wt" config "branch.ds/$slug.delegateBase" "$base"
+
+  # Hydrate what git does not carry. Both are gitignored, so they stay
+  # invisible to the diff and cannot be committed by accident.
+  # ponytail: symlinked node_modules assumes base and workspace share deps.
+  # A task that touches package.json must say "npm ci" in its brief.
+  [ -d "$repo/node_modules" ] && ln -s "$repo/node_modules" "$wt/node_modules"
+  for f in "$repo"/.env*; do [ -f "$f" ] && cp "$f" "$wt/"; done
+
+  { cat "$PROMPT"; printf '\n---\n\n'; cat; } > "$wt/TASK.md"
+  echo "delegate: $name @ $base -> ds/$slug"
+  run "$wt" "Read TASK.md in the root of this directory and carry it out exactly."
+}
+
+cmd_plan() { # plan <repo-path> <slug>   (question on stdin)
+  # The expensive part of delegating is understanding the code well enough to
+  # write the brief. Do that on the cheap model too: it investigates and writes
+  # PLAN.md, the reviewer reads only that.
+  local q; q=$(cat)
+  cmd_new "$@" <<EOF
+$q
+
+## This round is investigation only
+
+**Write no code. Change no file except PLAN.md. Do not commit.**
+
+Read whatever you need, then write \`PLAN.md\` in the root of this directory:
+
+- what you found — the files and symbols that actually matter, with paths
+- what you propose to change, file by file
+- the edge cases and traps you noticed
+- the exact command that will verify the work
+- anything the task asked for that the code contradicts
+
+Keep it under 80 lines. It is read by a reviewer who has not opened these files;
+every line must earn its place. When PLAN.md is written, stop.
+EOF
+}
+
+cmd_rework() { # rework <slug>   (review notes on stdin)
+  local wt
+  [ $# -eq 1 ] || die "usage: delegate rework <slug>  (notes on stdin)"
+  wt=$(wt_of "$1")
+
+  # Bounded repair. Two stop conditions, both cheap and both mechanical, because
+  # "I'll notice when it stops making progress" is not a thing you reliably do.
+  if [ -z "${DELEGATE_FORCE:-}" ] && [ -f "$wt/.fails" ]; then
+    local n last prev
+    n=$(wc -l <"$wt/.fails")
+    last=$(tail -1 "$wt/.fails"); prev=$(tail -2 "$wt/.fails" | head -1)
+    if [ "$n" -ge 2 ] && [ "$last" = "$prev" ]; then
+      die "same verify failure twice ($last) — it is not making progress. Take this one back, or DELEGATE_FORCE=1 to insist."
+    fi
+    if [ "$n" -ge "$MAX_ROUNDS" ]; then
+      die "$n failed rounds on '$1' — the briefing cost has eaten the saving. Do it yourself, or DELEGATE_FORCE=1 to insist."
+    fi
+  fi
+
+  cat > "$wt/REVIEW.md"
+  # Names both files, so this works whether or not -c resumes the old session.
+  run "$wt" "Read TASK.md and REVIEW.md in the root of this directory. TASK.md is your original task; REVIEW.md is what is wrong with the work you did. Fix every point in REVIEW.md, then verify again exactly as TASK.md says." -c
+}
+
+cmd_review() { # review <slug>  — deliberately small output; never the log
+  local wt base
+  wt=$(wt_of "$1"); base=$(fork_of "$wt")
+  echo "task     $1"
+  echo "worktree $wt"
+  echo "base     $base"
+  echo "commits  $(git -C "$wt" rev-list --count "$base..HEAD")"
+  echo "rounds   $([ -f "$wt/REVIEW.md" ] && echo 2+ || echo 1)"
+  echo
+  # Decisions are allowed, so the review channel must carry them: the commit
+  # bodies are where the implementer records every judgement call.
+  git -C "$wt" log --format='%n* %s%n%b' "$base..HEAD"
+  git -C "$wt" diff --stat "$base...HEAD"
+  echo
+  echo "-- uncommitted --"
+  git -C "$wt" status --porcelain | grep -v ' TASK.md$\| REVIEW.md$' || echo "(clean)"
+}
+
+cmd_check() { # check <slug> — run the implementer's own verify, bounded output
+  local wt rc=0
+  wt=$(wt_of "$1")
+  [ -f "$wt/VERIFY" ] || die "no VERIFY in $wt — the brief must name a verify command"
+  echo "-- $(cat "$wt/VERIFY")"
+  ( cd "$wt" && timeout 900 sh VERIFY ) >"$wt/.verify.out" 2>&1 || rc=$?
+  tail -15 "$wt/.verify.out"
+  echo "-- exit $rc"
+  # A failure is worth recording, so the next rework can tell "tried and got
+  # somewhere else" apart from "tried and got the identical failure back".
+  [ "$rc" -ne 0 ] && sha256sum <"$wt/.verify.out" | cut -c1-12 >>"$wt/.fails"
+  return $rc
+}
+
+cmd_ls() {
+  local wt base
+  find "$ROOT/wt" -mindepth 2 -maxdepth 2 -type d 2>/dev/null | sort | while read -r wt; do
+    base=$(fork_of "$wt")
+    printf '%-22s %-18s %2s commits  round %s\n' \
+      "$(basename "$wt")" "$(basename "$(dirname "$wt")")" \
+      "$(git -C "$wt" rev-list --count "$base..HEAD")" \
+      "$([ -f "$wt/REVIEW.md" ] && echo 2+ || echo 1)"
+  done
+}
+
+cmd_drop() { # drop <slug> — remove the worktree; the ds/<slug> branch survives
+  local wt repo
+  wt=$(wt_of "$1"); repo=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir)
+  git -C "$wt" worktree remove --force "$wt"
+  echo "delegate: dropped $wt (branch ds/$1 kept in ${repo%/.git})"
+}
+
+case "${1:-}" in
+  new)    shift; cmd_new "$@" ;;
+  plan)   shift; cmd_plan "$@" ;;
+  check)  shift; cmd_check "$@" ;;
+  rework) shift; cmd_rework "$@" ;;
+  review) shift; cmd_review "$@" ;;
+  ls)     shift; cmd_ls "$@" ;;
+  drop)   shift; cmd_drop "$@" ;;
+  *) die "usage: delegate {plan|new <repo> <slug> [base] | review|check|rework|drop <slug> | ls}" ;;
+esac

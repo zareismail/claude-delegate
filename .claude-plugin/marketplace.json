@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-delegate",
+  "description": "Delegate mechanical implementation work to a cheaper model, review the diff.",
+  "owner": { "name": "Ismail Zare", "url": "https://github.com/zareismail" },
+  "plugins": [
+    {
+      "name": "claude-delegate",
+      "description": "Claude plans and reviews; a cheap model implements in an isolated git worktree.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
