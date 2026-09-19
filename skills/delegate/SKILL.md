@@ -21,12 +21,18 @@ delegate ls                              # the board
 delegate drop <slug>                     # remove the worktree; the ds/<slug> branch survives
 ```
 
-Default model is `deepseek/deepseek-v4-flash` at effort `low`; override per run with
-`DELEGATE_MODEL=deepseek/deepseek-v4-pro` or `DELEGATE_VARIANT=high`. Low effort was
-measured on an identical brief: 37s vs 56s and $0.0040 vs $0.0047, both passing the
-same verify — effort buys little on mechanical work. Reach for `high` when the round
-is genuinely reasoning-heavy (a `plan` round on unfamiliar code), not by default; one
-extra rework round costs far more than the seconds low effort saves.
+Default model is `deepseek/deepseek-v4-flash` at effort `low`. **Leave the model
+alone.** `DELEGATE_MODEL=deepseek/deepseek-v4-pro` costs several times more per
+token, and it is the wrong answer to "this task looks hard" — a hard task needs a
+sharper brief, or it needs you. Reaching for a bigger implementer is the signal to
+keep the task, not to upgrade the runner.
+
+`DELEGATE_VARIANT=high` is the knob that is occasionally worth it, and even then
+rarely. Low effort was measured on an identical brief: 37s vs 56s and $0.0040 vs
+$0.0047, both passing the same verify — effort buys little on mechanical work.
+Reach for `high` when the round is genuinely reasoning-heavy (a `plan` round on
+unfamiliar code), not by default; one extra rework round costs far more than the
+seconds low effort saves.
 
 **Always launch `new` and `rework` with `run_in_background: true`.** The script runs
 opencode in the foreground so the harness owns the process and notifies you when it
