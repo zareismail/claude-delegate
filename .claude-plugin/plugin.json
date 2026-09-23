@@ -1,6 +1,6 @@
 {
   "name": "claude-delegate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Claude plans and reviews; a cheap model implements in an isolated git worktree. Keeps the token spend off the expensive model.",
   "keywords": ["claude-code", "delegation", "worktree", "deepseek", "opencode", "cost"],
   "license": "MIT",

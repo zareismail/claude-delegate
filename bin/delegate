@@ -11,7 +11,7 @@ PROMPT="${DELEGATE_PROMPT:-$HERE/PROMPT.md}"
 # Make these exist once, here, rather than guarding every find and redirect that
 # touches them. A fresh install has neither, and `ls` is the first thing run.
 mkdir -p "$ROOT/wt" "$ROOT/logs"
-MODEL="${DELEGATE_MODEL:-deepseek/deepseek-v4-flash}"
+MODEL="${DELEGATE_MODEL:-deepseek/deepseek-flash}"
 # Reasoning effort. Low means fewer, more consolidated tool calls — which is
 # where the wall-clock actually goes; generation rate is ~30 tok/s regardless.
 VARIANT="${DELEGATE_VARIANT:-low}"
@@ -53,6 +53,19 @@ run() { # run <worktree> <prompt> [extra opencode opts...]
   timeout "$TIMEOUT" opencode run --dir "$wt" --auto -m "$MODEL" --variant "$VARIANT" "$@" "$prompt" \
     >"$log" 2>&1 || rc=$?
   echo "delegate: opencode exit $rc"
+  # A provider renames things under you. opencode 1.18.32 turned
+  # deepseek-v4-flash into deepseek-flash, and the dead id came back as a
+  # generic "Unexpected server error" — which sends you into the log looking
+  # for a bug in the task. Cost is zero on the happy path; only a failed run
+  # pays for the lookup.
+  if [ "$rc" -ne 0 ]; then
+    local prov=${MODEL%%/*}
+    if ! opencode models "$prov" 2>/dev/null | grep -qx -- "$MODEL"; then
+      echo "delegate: '$MODEL' is no longer in $prov's catalog. It now offers:"
+      opencode models "$prov" 2>/dev/null | sed 's/^/delegate:   /'
+      echo "delegate: set DELEGATE_MODEL to one of those."
+    fi
+  fi
   return $rc
 }
 

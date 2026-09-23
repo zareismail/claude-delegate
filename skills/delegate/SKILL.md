@@ -21,7 +21,7 @@ delegate ls                              # the board
 delegate drop <slug>                     # remove the worktree; the ds/<slug> branch survives
 ```
 
-Default model is `deepseek/deepseek-v4-flash` at effort `low`. **Leave the model
+Default model is `deepseek/deepseek-flash` at effort `low`. **Leave the model
 alone.** `DELEGATE_MODEL=deepseek/deepseek-v4-pro` costs several times more per
 token, and it is the wrong answer to "this task looks hard" — a hard task needs a
 sharper brief, or it needs you. Reaching for a bigger implementer is the signal to

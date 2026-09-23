@@ -23,7 +23,7 @@ Claude reads a diff, a plan summary, and a fifteen-line verdict.
 ```
 
 You need [opencode](https://opencode.ai) with a provider configured. Default is
-`deepseek/deepseek-v4-flash` at effort `low`; `DELEGATE_MODEL` and `DELEGATE_VARIANT`
+`deepseek/deepseek-flash` at effort `low`; `DELEGATE_MODEL` and `DELEGATE_VARIANT`
 override it. Reaching for a bigger model is usually a sign the brief is too vague,
 or that the task is not one to delegate — see [What not to do](#what-not-to-do).
 
@@ -74,7 +74,7 @@ it spins.
 
 | Variable | Default | |
 |---|---|---|
-| `DELEGATE_MODEL` | `deepseek/deepseek-v4-flash` | any `provider/model` opencode knows. Raising it defeats the point of the tool |
+| `DELEGATE_MODEL` | `deepseek/deepseek-flash` | any `provider/model` opencode knows. Raising it defeats the point of the tool |
 | `DELEGATE_VARIANT` | `low` | reasoning effort. Measured on an identical brief: low 37s/$0.0040, high 56s/$0.0047, both passing |
 | `DELEGATE_MAX_ROUNDS` | `4` | runaway backstop for repair rounds |
 | `DELEGATE_FORCE` | unset | bypass the repair guards |
