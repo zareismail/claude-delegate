@@ -1,9 +1,14 @@
 ---
 name: delegate
-description: Hand mechanical implementation work to a cheaper model (DeepSeek via opencode) running in an isolated git worktree, then review what comes back. Use when the user says "delegate this", "give it to deepseek", "farm this out", "run it in a worktree", or when a task is large but mechanical — repetitive edits across many files, applying an existing pattern, a settled migration or rename, tests against behaviour already specified. Also use when planning a big task that should be split into slices for a cheaper implementer. Works in any repository, and on a brand-new project with no git repo yet. If the `delegate` command is not found, run /delegate-setup once.
+description: Decide who implements a change — you, or a cheaper model (DeepSeek via opencode) running in an isolated git worktree — then run it and review what comes back. Load this BEFORE starting implementation work of any size: adding a feature, writing tests, a migration or rename, applying a pattern that already exists in the repo, scaffolding, CRUD, or any change spanning more than one file. The routing decision is yours to make unprompted; the user does not have to ask. Also use when the user says "delegate this", "give it to deepseek" or "farm this out", and when planning a big task to split into slices. Carries the routing rule, the size gate, the brief format and the review discipline. Works in any repository, and on a brand-new project with no git repo yet. If the `delegate` command is not found, run /delegate-setup once.
 ---
 
 # Delegating implementation work
+
+**Routing is your call, and you make it unprompted.** The plugin's `SessionStart` hook
+puts the short version of the rule below into every session for exactly this reason: the
+decision happens in the first seconds of a task, before any skill has been loaded. This
+file is the long version — the commands, the size gate, the brief format, the review.
 
 The `delegate` command runs a cheaper implementer (DeepSeek via `opencode`) inside a
 git worktree. **The worktree is the task record** — it knows its repo, its name, its
@@ -172,3 +177,14 @@ at merge and eat the saving. Fan out only once the foundation's tests pass; a wr
 foundation makes every slice wrong. Review each slice as it lands, not at the end.
 
 While a slice runs you are not blocked: pick up the next piece of work.
+
+## Report once
+
+Say who is doing what at the moment you decide it — one line, with the reason — then go
+quiet and work. Do not narrate each handoff, each round trip and each review as it
+happens: a running commentary is context you pay to re-read on every later API call, and
+it asks the user to supervise a decision you were asked to own.
+
+One report at the end: what was built, what you kept and why, what the implementer did
+and which of its recorded decisions you reversed, what you verified and how, and anything
+left out. Interrupt mid-flight only when something blocks on the user's judgement.

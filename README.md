@@ -31,6 +31,18 @@ Check your opencode config too: a global `"model"` in `~/.config/opencode/openco
 is what a bare `opencode run` falls back to, and it is easy to leave pointed at an
 expensive model.
 
+## Routing happens without being asked
+
+The decision of who implements a change gets made in the first seconds of a task —
+before any skill description has matched anything. A skill therefore cannot be what
+carries it, which is why installing this plugin also installs a `SessionStart` hook.
+It prints a short routing rule into every session, along with a live count of what the
+implementer is already holding, so the choice is in front of Claude at the moment the
+choice is made rather than only when you remember to ask for it.
+
+It is one small block of text per session. If you do not want it, delete
+`hooks/hooks.json` from the installed plugin; nothing else depends on it.
+
 ## The loop
 
 ```
