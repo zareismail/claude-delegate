@@ -27,20 +27,22 @@ implementer, or both with the split named — and say why in one line. Every tas
 when asked. Your own context re-reads, not the implementing, are what cost money here.
 
 - **Keep:** design · debugging an unknown cause · security, auth, payments · *deciding* a
-  public API contract or what the product says to a user · the review itself. Once that
-  decision is made, carrying it out across files is not yours.
+  public API contract or what the product says to a user · the review. Once that is
+  decided, carrying it into files is not yours.
 - **Hand down:** repetitive edits across files · applying a pattern already in the repo ·
-  mechanical migrations and renames · tests against behaviour you have already specified ·
-  CRUD on a settled schema · scaffolding.
-- **Keep it only if it is genuinely small:** under ~25 lines in one file. Already knowing
-  the exact lines argues for keeping it, unless that same edit repeats across files —
-  there, knowing it is what makes the brief cheap.
+  mechanical migrations and renames · tests against behaviour you specified · CRUD on a
+  settled schema · scaffolding.
+- **Keep it only if genuinely small:** under ~25 lines in one file. Knowing the exact lines
+  argues for keeping it, unless that same edit repeats across files.
 - **Split rather than choose.** Most tasks are a hard core plus mechanical bulk: keep the
   core, commit it, hand the bulk down against that commit.
 - **Re-decide at every boundary**, not once per task — especially once the design settles.
-- **On a close call, hand it down.** The mistakes are not symmetric — a wrong handoff
-  costs one cheap round, a needlessly kept task costs a stretch of this session at this
-  session's price. Do not hunt for a reason to keep it.
+- **On a close call, hand it down.** A wrong handoff costs one cheap round; a needlessly
+  kept task costs a stretch of this session at this session's price.
+- **You need not specify the how.** State the goal, the constraints, the traps you foresee
+  and how you will know it worked; \`delegate plan\` investigates and hands you a plan to
+  correct. Needing to read the code first is a reason to hand it down, not to keep it. Only
+  the acceptance is never vague: if you cannot name what settles it, you are not ready.
 
 Do not sit idle while it works, and do not queue more than you can review. Load the
 \`delegate\` skill for the commands, brief format and review discipline before handing off.

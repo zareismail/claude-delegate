@@ -64,6 +64,23 @@ another task's branch, which is how one big job splits across worktrees.
 Launch `plan`, `new` and `rework` in the background — the script runs opencode in the
 foreground on purpose, so the harness owns the process and tells Claude when it exits.
 
+## Two shapes of brief
+
+A brief does not have to say how. When the code is already open, a spec brief — exact
+files, symbols, edge cases, traps, verify command — is cheap to write and comes back
+nearly deterministic. When it is not open, an intent brief is the cheaper instrument:
+what you want and why, what must be true when it is done, the constraints, the traps you
+can foresee. The implementer reads the code; reading is what it is for.
+
+Run an intent brief in two rounds — `delegate plan` investigates and writes `PLAN.md`,
+you correct that, then `delegate rework` implements. The plan round is the question
+channel a one-shot brief does not have, and reading an 80-line plan costs a fraction of
+reading the repo yourself.
+
+The one thing that is never loose in either shape is the acceptance. The how belongs to
+the implementer; how you will know it worked belongs to you, and it has to be concrete
+before anything is handed over — that is what `delegate check` enforces.
+
 ## Design
 
 **The worktree is the task record.** It knows its repo (it is a worktree of it), its

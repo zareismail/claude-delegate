@@ -119,14 +119,48 @@ away the half you already paid for and buys a brief on top of it.
 
 ## The brief
 
-The implementer cannot see your conversation and will not ask before guessing. Each
-brief stands alone: goal in one line · exact files and symbols · expected behaviour and
-the edge cases that matter · an existing file to imitate · what must not change · the
-traps a cheaper model gets wrong · the exact verify command · the commit message.
+The implementer cannot see your conversation, and its only way to push back is to write
+`BLOCKED.md` and stop. So a brief has to stand alone. It does **not** have to specify the
+how — and demanding that of yourself is where this design leaks, because «the exact files
+and symbols» means reading the code first, and reading the code to write a brief is the
+most expensive thing you can do here.
+
+Two shapes. Pick by what you already know, not by how hard the task looks.
+
+**A spec brief — when the code is already in your context.** Goal in one line · the exact
+files and symbols · expected behaviour and the edge cases that matter · an existing file to
+imitate · what must not change · the traps · the verify command · the commit message.
+Cheap to write precisely *because* the investigation is already paid for, and the round
+comes back close to deterministic.
+
+**An intent brief — when it is not.** What you want and why · what must be true when it is
+done · the constraints that are not negotiable · the traps you can foresee. Leave the how
+to the implementer: it can read the code, and reading is what it is for. This is how a
+good task arrives at you, and it works for the same reason — whoever has the files open is
+better placed to decide the how than whoever has the intent.
+
+**Run an intent brief in two rounds, not one.** `delegate plan` first: it investigates and
+writes `PLAN.md`; you read only that, correct it, then `delegate rework` to implement.
+That plan round is the question channel a one-shot brief does not have, and reading a
+80-line plan costs a fraction of reading the repo yourself. Use it whenever your brief
+would otherwise have been a guess about code you have not opened.
+
+**What is never loose, in either shape: how you will know it worked.** The how belongs to
+the implementer; the acceptance is yours, and it has to be concrete *before* you hand
+anything over. If you cannot name the command or the observation that settles it, you are
+not ready to delegate — and that is a hole in your own thinking, not in the brief. Write
+the verify; `delegate check` then holds the implementer to it rather than to your goodwill.
+
+**Name the traps even when you name nothing else.** A trap is not specification, it is a
+failure mode: strings that must be copied byte-for-byte, an RTL layout where the arrow keys
+invert, a field that is null on three of twenty-eight steps. Each one left unsaid returns
+as a wrong assumption compiled into code, and this is the part of a brief that pays for
+itself every single time.
 
 The plugin's `PROMPT.md` is prepended automatically — do not restate its rules. It already
 tells the implementer to read the repo's own `AGENTS.md`/`CLAUDE.md`, to make its own
-judgement calls, and to record every one of them in the commit body.
+judgement calls and record each one in the commit body, and to write `BLOCKED.md` rather
+than guess when the task does not match the code.
 
 ## Keep the token burn on the cheap model
 
