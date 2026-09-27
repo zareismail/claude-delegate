@@ -98,12 +98,14 @@ it spins.
 Do not read `$DELEGATE_HOME/logs/*`. That log is the one thing that can blow up the
 orchestrator's context, and the whole design exists to keep it out.
 
-Do not delegate anything small. Under ~40 lines in one file, writing the brief costs
-more than the change — delegating it *raises* total spend.
+Do not delegate anything genuinely small. Under ~25 lines in one file, writing the brief
+costs more than the change — delegating it *raises* total spend. Above that the
+arithmetic stops being obvious, and on a close call the handoff is the cheaper mistake.
 
-Do not delegate architecture, unknown-cause debugging, security, auth, payments, or
-anything touching a public API contract. Those are why you are paying for the
-expensive model.
+Do not delegate architecture, unknown-cause debugging, security, auth or payments, and do
+not delegate *deciding* a public API contract or what the product says to a user. Those
+are why you are paying for the expensive model. Carrying a decision you have already made
+into a pile of files is a different thing, and it belongs downstairs.
 
 ## License
 

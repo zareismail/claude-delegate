@@ -50,24 +50,42 @@ the repo · mechanical migrations and renames · tests against behaviour you hav
 specified · CRUD against a settled schema · scaffolding and boilerplate.
 
 **Keep:** architecture · debugging anything whose cause is unknown · security, auth,
-payments · performance work needing measurement · anything touching a public API
-contract · **the words the product says to a user** · the review itself.
+payments · performance work needing measurement · **deciding** a public API contract ·
+**deciding the words the product says to a user** · the review itself.
+
+Those last two are decisions, not files. Settling what an endpoint's shape is, or what a
+label says, is yours. Typing that decision into eleven files afterwards is not — the
+judgement is spent, and what is left is the first entry under Delegate. Write the settled
+contract or the exact strings into the brief and hand it down.
 
 User-facing wording looks cosmetic and is not. A label is a claim, and a claim can be
 false in a way no test and no reviewer of a diff will catch — «فروش» on a buyer's file
-reads fine to anyone who does not know the domain. If the change is «what should this
-say?», that is a judgement about the user's business, and it is yours.
+reads fine to anyone who does not know the domain. So «what should this say?» is yours.
+«Put these exact words in these places» is not: once you have written the strings, they
+are data in a brief like any other.
 
-**Keep anything small.** Under roughly 40 lines in one file, writing the brief costs
-more than the change. Delegating a small task *raises* total cost — do it yourself.
+**Keep anything genuinely small.** Under roughly 25 lines in one file, writing the brief
+costs more than the change and delegating *raises* total cost — do it yourself. Above
+that the arithmetic stops being obvious, and «obvious» is the only thing that should keep
+a task here.
 
 **The size gate needs a fact, not a guess, and you usually already have one.** Before
-writing any brief, ask: *can I already name the exact lines to change?* If yes — the
-file is in context, the edit is a class name, a condition, a string — the investigation
-is already paid for and the brief is now strictly more expensive than the edit. Make the
-edit. This is the rule that actually fails in practice, because writing a brief feels
-like progress: it produces a page of text and a running task, and neither is the work.
-Delegating is for the investigation you have *not* done yet.
+writing any brief, ask: *can I already name the exact lines to change?* If yes, and it is
+one file, make the edit — the investigation is already paid for and the brief would cost
+more than the change. Writing a brief feels like progress because it produces a page of
+text and a running task, and neither is the work.
+
+But this is a signal, not a veto, and it inverts the moment the same named edit repeats.
+Knowing exactly what to change in fourteen files is not a reason to type it fourteen
+times; it is what makes that brief short and its verify exact. Delegating is for the
+investigation you have not done yet **and** for the volume you have already understood.
+
+**When the call is genuinely close, hand it down.** The two errors are not priced the
+same. A handoff that turns out wrong costs one cheap round plus the rework note; a task
+kept for no better reason than being already here costs a stretch of this session, at
+this session's price, and that asymmetry is the entire reason the tool exists. A
+borderline task that goes down and comes back imperfect has still cost less than the same
+task done in full up here.
 
 ## Route again whenever the shape changes
 

@@ -23,22 +23,25 @@ A cheaper implementer (DeepSeek) is available through \`delegate\`, running in a
 isolated git worktree. It currently holds $busy task(s); \`delegate ls\` is the live board.
 
 **Before you start implementing anything, decide out loud who does it** — you, the
-implementer, or both with the split named — and say why in one line. Do this for every
-task, not only when the user asks for delegation. The point is to move token burn off
-this session: your own context re-reads cost far more than the implementation does.
+implementer, or both with the split named — and say why in one line. Every task, not only
+when asked. Your own context re-reads, not the implementing, are what cost money here.
 
-- **Keep:** design · debugging an unknown cause · security, auth, payments · public API
-  contracts · user-facing wording · the review itself.
+- **Keep:** design · debugging an unknown cause · security, auth, payments · *deciding* a
+  public API contract or what the product says to a user · the review itself. Once that
+  decision is made, carrying it out across files is not yours.
 - **Hand down:** repetitive edits across files · applying a pattern already in the repo ·
   mechanical migrations and renames · tests against behaviour you have already specified ·
   CRUD on a settled schema · scaffolding.
-- **Keep it if it is small.** Under ~40 lines in one file, or anything whose exact lines
-  you can already name, the brief costs more than the edit.
-- **Split rather than choose.** Most real tasks are a hard core plus mechanical bulk.
-  Keep the core, commit it, hand the bulk down against that commit.
+- **Keep it only if it is genuinely small:** under ~25 lines in one file. Already knowing
+  the exact lines argues for keeping it, unless that same edit repeats across files —
+  there, knowing it is what makes the brief cheap.
+- **Split rather than choose.** Most tasks are a hard core plus mechanical bulk: keep the
+  core, commit it, hand the bulk down against that commit.
 - **Re-decide at every boundary**, not once per task — especially once the design settles.
+- **On a close call, hand it down.** The mistakes are not symmetric — a wrong handoff
+  costs one cheap round, a needlessly kept task costs a stretch of this session at this
+  session's price. Do not hunt for a reason to keep it.
 
-Do not sit idle while the implementer works, and do not queue so much that you cannot
-review it. Load the \`delegate\` skill for the commands, the brief format and the review
-discipline before the first handoff.
+Do not sit idle while it works, and do not queue more than you can review. Load the
+\`delegate\` skill for the commands, brief format and review discipline before handing off.
 EOF
