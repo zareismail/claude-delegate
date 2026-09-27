@@ -255,6 +255,23 @@ foundation makes every slice wrong. Review each slice as it lands, not at the en
 
 While a slice runs you are not blocked: pick up the next piece of work.
 
+## Do not put any of this in memory
+
+This package is the versioned source of truth for its own rules. When routing behaves
+wrongly the fix is to edit the package and bump it — which is why the thresholds, the
+Keep/Hand-down lists, the brief shapes and the drift check all live in files, and why a
+commit message can explain a change in behaviour.
+
+A copy in memory defeats that twice over. It cannot be edited by a package fix, so it
+outlives the rule it was copied from and then quietly overrides the current one; and it
+makes an improvement look like a change in how you behave rather than a change to a file
+someone can read, review and revert. If a rule here is wrong, do not write a note about
+it — change it, bump the version, and let the commit be the record.
+
+What does belong in memory is what the package cannot know: what the user decided and
+why, the constraints of their project, the facts you would otherwise have to rediscover.
+Not the contents of this file.
+
 ## Report once
 
 Say who is doing what at the moment you decide it — one line, with the reason — then go

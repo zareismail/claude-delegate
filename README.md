@@ -124,6 +124,13 @@ it spins.
 
 ## What not to do
 
+Do not copy the routing rules into Claude's memory. This package is their versioned source
+of truth and it is edited when a rule turns out to be wrong; a copy in memory cannot be,
+so it outlives the rule and then overrides it. It also makes an improvement look like a
+change in behaviour rather than a change to a reviewable file. Memory is for what the
+package cannot know — what you decided, and why.
+
+
 Do not read `$DELEGATE_HOME/logs/*`. That log is the one thing that can blow up the
 orchestrator's context, and the whole design exists to keep it out.
 
