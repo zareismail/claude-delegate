@@ -40,8 +40,18 @@ It prints a short routing rule into every session, along with a live count of wh
 implementer is already holding, so the choice is in front of Claude at the moment the
 choice is made rather than only when you remember to ask for it.
 
-It is one small block of text per session. If you do not want it, delete
-`hooks/hooks.json` from the installed plugin; nothing else depends on it.
+A second failure is cumulative rather than per-task: a stream of small asks, each
+genuinely under the size gate, each kept for that reason, adding up to hundreds of
+hand-written lines that should have gone down as one slice. No individual decision in
+that sequence is wrong, so judgement does not catch it. A `PostToolUse` hook therefore
+tallies the lines and files this session writes itself — silently, because PostToolUse
+output never reaches the model, so it costs nothing — and a `UserPromptSubmit` hook says
+so once past `DELEGATE_DRIFT_LINES` (120) or `DELEGATE_DRIFT_FILES` (4), then resets. On
+every other prompt it prints nothing at all. A handoff resets the count.
+
+The session block is one small piece of text; the other two hooks are free unless they
+have something to report. If you do not want any of it, delete `hooks/hooks.json` from
+the installed plugin; nothing else depends on it.
 
 ## The loop
 
@@ -109,6 +119,8 @@ it spins.
 | `DELEGATE_FORCE` | unset | bypass the repair guards |
 | `DELEGATE_HOME` | `~/.delegate` | where worktrees and logs live |
 | `DELEGATE_TIMEOUT` | `3600` | seconds per run |
+| `DELEGATE_DRIFT_LINES` | `120` | hand-written lines since the last handoff before the drift check speaks |
+| `DELEGATE_DRIFT_FILES` | `4` | files touched since the last handoff before it speaks |
 
 ## What not to do
 

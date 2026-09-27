@@ -52,12 +52,20 @@ afterwards, from your commit body and your diff. A decision you made and recorde
 is fine even when the reviewer reverses it. A decision you made silently is the
 problem, because it gets found later and by accident.
 
-Three things stay out of bounds:
+Four things stay out of bounds:
 
 - **Do not delete, skip or weaken a test to make your verify pass.** Make the
   code pass. This is the one that gets people fired.
-- Do not restructure code you were not asked to touch. Writing *your own* code
-  well is expected; rewriting the neighbours is not.
+- **Do not commit the tooling's own files.** `VERIFY`, `TASK.md`, `REVIEW.md` and
+  `BLOCKED.md` are how you and the reviewer talk to each other. They are not part
+  of the change. Write `VERIFY`, run it, leave it untracked — `git add` the files
+  the task is about and nothing else. The same goes for any scratch script you
+  wrote to check your own work: useful to you, noise in someone's repository.
+- Do not restructure code you were not asked to touch, and **do not change a
+  configuration default the task did not name.** Touch the files the brief names.
+  If you are convinced another one has to change, change it and say why in the
+  commit body — an unexplained edit to a config file is the hardest kind for a
+  reviewer to judge, because nothing about it looks broken.
 - Do not wander. Any file in the diff a reviewer would not expect there needs a
   line in the commit body earning its place.
 

@@ -102,12 +102,29 @@ Re-check at every boundary you cross. Three are worth naming:
   exists in the repo», which is the first entry under Delegate. Commit the foundation
   and hand the slices down — that is what `delegate new <repo> <slice> ds/foundation`
   is for, and the brief is short precisely because the design is already in the branch.
+
+  Concretely, and this is the one that gets missed: **once an endpoint or an access rule
+  is committed, the client page that consumes it and the tests that cover it are a
+  slice.** Not a follow-up you happen to be well placed for. The judgement was in the
+  rule; what is left is typing against something that now exists and can be read.
 - **It is bigger than you thought.** The moment a change turns out to span six files
   instead of one, the size gate was answered with a number that is no longer true. Ask
   it again with the real one.
 - **You just finished a piece.** Judge the next piece on what it is, not on the task it
   belongs to. A driver against an external API you cannot verify is yours; the test file
   beside it is not, and they arrive in the same breath.
+
+**The gate is per task; the bill is cumulative.** This is the failure that actually
+happened, over two days on a real project: a stream of small asks, each genuinely under the
+size gate, each kept for that reason — and together hundreds of lines of pages and tests
+written by hand against interfaces that were already committed. One task in two days went
+down. No single decision in that sequence was wrong, which is exactly why judgement cannot
+catch it: you are asked one small thing at a time and you answer correctly each time.
+
+So do not only ask «is *this* small?». Ask what you have written since the last handoff.
+The plugin counts it for you — a `PostToolUse` hook tallies lines and files silently, and
+tells you once you cross ~120 lines or 4 files — but the habit is yours: after a couple of
+small asks in the same area, the next one is a slice, not another small ask.
 
 **Look at the board before you keep something.** `delegate ls` is one call. An idle
 implementer is capacity that costs nothing while it sits there, and «I am already here
@@ -150,6 +167,14 @@ the implementer; the acceptance is yours, and it has to be concrete *before* you
 anything over. If you cannot name the command or the observation that settles it, you are
 not ready to delegate — and that is a hole in your own thinking, not in the brief. Write
 the verify; `delegate check` then holds the implementer to it rather than to your goodwill.
+
+**The strongest acceptance check is a fingerprint compared against an expected set.** This
+is what worked best in practice, on a migration squash: the brief named a command that
+prints a fingerprint of the resulting schema, and the exact set of differences that was
+intended. Anything else in that diff is a failure, and the implementer can see that for
+itself without a reviewer. Reach for this shape on refactors, migrations and renames —
+anything where «nothing else changed» is the actual requirement. It converts a review you
+would have done by reading into one the implementer runs before it hands the work back.
 
 **Name the traps even when you name nothing else.** A trap is not specification, it is a
 failure mode: strings that must be copied byte-for-byte, an RTL layout where the arrow keys

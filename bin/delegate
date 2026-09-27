@@ -35,9 +35,37 @@ wt_of() {
 # The repo says what its own base branch is. Works from the worktree too.
 # What a new task branches off, in order of preference: the remote's default
 # branch, else whatever branch is checked out. A brand-new app has no remote.
+# The base branch, preferring the LOCAL ref over the remote one. A repo with
+# unpushed commits is the normal state, and branching a worktree from
+# origin/<branch> there hands the implementer stale code that still builds and
+# still passes — the worst kind of wrong. Reported from real use: an implementer
+# worked for a round against code that had already been changed locally.
 base_of() {
-  git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null && return 0
-  git -C "$1" rev-parse --abbrev-ref HEAD 2>/dev/null
+  local remote branch
+  remote=$(git -C "$1" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) || {
+    git -C "$1" rev-parse --abbrev-ref HEAD 2>/dev/null; return
+  }
+  branch=${remote#origin/}
+  # Only prefer the local branch when it actually exists; a fresh clone may have
+  # the remote ref and no local branch of that name.
+  if git -C "$1" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null; then
+    printf '%s' "$branch"
+  else
+    printf '%s' "$remote"
+  fi
+}
+
+# Say so when local and origin disagree. Either direction is a real hazard and
+# neither is ours to resolve silently: local ahead is the case base_of now
+# handles, local behind means the slice will be built on old code.
+warn_divergence() {
+  local repo=$1 base=$2 ahead behind
+  git -C "$repo" rev-parse --verify --quiet "refs/remotes/origin/$base" >/dev/null || return 0
+  ahead=$(git -C "$repo" rev-list --count "origin/$base..$base" 2>/dev/null) || return 0
+  behind=$(git -C "$repo" rev-list --count "$base..origin/$base" 2>/dev/null) || return 0
+  [ "$ahead" -gt 0 ] && echo "delegate: note - $base is $ahead commit(s) ahead of origin; the worktree includes them"
+  [ "$behind" -gt 0 ] && echo "delegate: WARNING - $base is $behind commit(s) behind origin/$base. Pull first, or pass origin/$base as the base."
+  return 0
 }
 
 # Where this worktree's branch actually started — which is not origin/HEAD when
@@ -87,6 +115,7 @@ cmd_new() { # new <repo-path> <slug> [base]   (brief on stdin)
   # foundation commit — the pattern for one big task split across worktrees.
   base=${3:-$(base_of "$repo")}
   git -C "$repo" rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "no such base: $base"
+  case "$base" in origin/*|*/*) ;; *) warn_divergence "$repo" "$base" ;; esac
   mkdir -p "$(dirname "$wt")"
   git -C "$repo" worktree add -q -b "ds/$slug" "$wt" "$base"
   git -C "$wt" config "branch.ds/$slug.delegateBase" "$base"
@@ -165,6 +194,15 @@ cmd_review() { # review <slug>  — deliberately small output; never the log
   # bodies are where the implementer records every judgement call.
   git -C "$wt" log --format='%n* %s%n%b' "$base..HEAD"
   git -C "$wt" diff --stat "$base...HEAD"
+  # The tooling's own files are not part of the change, and one of them is a file
+  # this prompt asks the implementer to create — so the mistake is easy to make and
+  # easy to miss in a diffstat. Name it here rather than hoping the reviewer looks.
+  local strays
+  strays=$(git -C "$wt" diff --name-only "$base...HEAD" \
+           | grep -xE 'VERIFY|TASK\.md|REVIEW\.md|BLOCKED\.md' || true)
+  [ -n "$strays" ] && echo "
+-- tooling files committed (should not be in the change) --
+$strays"
   echo
   echo "-- uncommitted --"
   git -C "$wt" status --porcelain | grep -v ' TASK.md$\| REVIEW.md$' || echo "(clean)"

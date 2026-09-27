@@ -36,11 +36,13 @@ when asked. Your own context re-reads, not the implementing, are what cost money
   argues for keeping it, unless that same edit repeats across files.
 - **Split rather than choose.** Most tasks are a hard core plus mechanical bulk: keep the
   core, commit it, hand the bulk down against that commit.
-- **Re-decide at every boundary**, not once per task — especially once the design settles.
+- **Re-decide at every boundary**, not once per task. Once an endpoint or access rule is
+  committed, the page consuming it and its tests are a slice, not a follow-up you happen
+  to be well placed for.
 - **On a close call, hand it down.** A wrong handoff costs one cheap round; a needlessly
   kept task costs a stretch of this session at this session's price.
-- **You need not specify the how.** State the goal, the constraints, the traps you foresee
-  and how you will know it worked; \`delegate plan\` investigates and hands you a plan to
+- **You need not specify the how.** Give the goal, the constraints, the traps you foresee
+  and how you will know it worked; \`delegate plan\` investigates and returns a plan to
   correct. Needing to read the code first is a reason to hand it down, not to keep it. Only
   the acceptance is never vague: if you cannot name what settles it, you are not ready.
 
