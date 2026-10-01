@@ -121,6 +121,8 @@ it spins.
 | `DELEGATE_TIMEOUT` | `3600` | seconds per run |
 | `DELEGATE_DRIFT_LINES` | `120` | hand-written lines since the last handoff before the drift check speaks |
 | `DELEGATE_DRIFT_FILES` | `4` | files touched since the last handoff before it speaks |
+| `DELEGATE_SLICE_FILES` | `8` | files in one returned slice before `review` calls it oversized |
+| `DELEGATE_SLICE_LINES` | `250` | insertions in one returned slice before `review` calls it oversized |
 
 ## What not to do
 

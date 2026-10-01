@@ -49,37 +49,37 @@ busy=$(find "$root/wt" -mindepth 2 -maxdepth 2 -type d 2>/dev/null | wc -l)
 cat <<EOF
 ## Routing implementation work (claude-delegate)
 
-A cheaper implementer (DeepSeek) is available through \`delegate\`, running in an
-isolated git worktree. It currently holds $busy task(s); \`delegate ls\` is the live board.
+A cheaper implementer (DeepSeek) runs through \`delegate\` in an isolated git worktree. It
+holds $busy task(s) now; \`delegate ls\` is the board. Your context re-reads, not the
+implementing, are what cost money here.
 
-**Before you start implementing anything, decide out loud who does it** — you, the
-implementer, or both with the split named — and say why in one line. Every task, not only
-when asked. Your own context re-reads, not the implementing, are what cost money.
+**Before implementing anything, say in one line who does it and why** — you, the
+implementer, or both with the split named. Every task, not only when asked.
 
 - **Keep:** design · debugging an unknown cause · security, auth, payments · *deciding* an
-  API contract or what the product says to a user · the review. Carrying a settled decision
-  into files is not yours.
+  API contract or the words the product says · the review. Carrying a settled decision into
+  files is not yours.
 - **Hand down:** repetitive edits across files · applying a pattern already in the repo ·
   mechanical migrations and renames · tests against behaviour you specified · CRUD on a
   settled schema · scaffolding.
 - **Keep it only if genuinely small:** under ~25 lines in one file. Knowing the exact lines
-  argues for keeping it, unless that same edit repeats across files.
-- **Split rather than choose.** Most tasks are a hard core plus mechanical bulk: keep the
-  core, commit it, hand the bulk down against that commit.
-- **Re-decide at every boundary**, not once per task. Once an endpoint or access rule is
-  committed, the page consuming it and its tests are a slice, not a follow-up you happen
-  to be well placed for.
-- **On a close call, hand it down.** A wrong handoff costs one cheap round; a needlessly
-  kept task costs a stretch of this session.
-- **You need not specify the how.** Give the goal, the constraints, the traps you foresee
-  and how you will know it worked; \`delegate plan\` investigates and returns a plan to
-  correct. Needing to read the code first is a reason to hand it down, not to keep it. Only
-  the acceptance is never vague — name what settles it, or you are not ready.
+  argues for keeping it, unless that edit repeats across files.
+- **Hand down slices, never whole features.** One handoff is one observable result: one
+  commit, one verify that goes green, one named change in behaviour. **Report each in a line
+  as it lands** — what works now, how verified — and narrate no process. Saving it for the
+  end removes the only chance anyone has to redirect you. The skill carries the rest: the
+  uncertain-part-first rule, and when running slices in parallel is safe.
+- **Re-decide at every boundary.** Once an endpoint or access rule is committed, the page
+  consuming it and its tests are a slice, not a follow-up you are well placed for.
+- **On a close call, hand it down.** A wrong handoff costs one cheap round; a needlessly kept
+  task costs a stretch of this session.
+- **You need not specify the how.** Give the goal, the constraints, the traps you foresee and
+  how you will know it worked; \`delegate plan\` investigates and returns a plan to correct.
+  Needing to read the code first is a reason to hand it down. Only the acceptance is never
+  vague — name what settles it, or you are not ready.
 
-Do not sit idle while it works, and do not queue more than you can review. Load the
-\`delegate\` skill for the commands, brief format and review discipline before handing off.
-
-**Do not copy any of this into memory.** The package is the versioned source of truth and
-gets edited when a rule is wrong; a copy in memory cannot be, so it goes stale and then
-overrides the live rule. Save only what the package cannot know: the user's decisions.$skew
+Do not sit idle while it works, nor queue more than you can review. Load the \`delegate\`
+skill before handing off. **Do not copy any of this into memory:** the package is the
+versioned source of truth and is edited when a rule is wrong, so a copy goes stale and then
+overrides the live rule. Memory is for what the package cannot know — the user's decisions.$skew
 EOF

@@ -251,9 +251,19 @@ delegate new <repo> slice-c ds/slice-a       # dependent: stack it
 
 Split by file ownership, not by feature — two parallel slices touching one file conflict
 at merge and eat the saving. Fan out only once the foundation's tests pass; a wrong
-foundation makes every slice wrong. Review each slice as it lands, not at the end.
+foundation makes every slice wrong.
+
+**Review and report each slice as it lands, never at the end.** A stack of finished slices
+reviewed together is the same failure as one oversized handoff, arrived at by a different
+route. Land one, say what now works in a line, then start the next — and when a slice feeds
+the one after it, run them in that order rather than guessing both at once.
 
 While a slice runs you are not blocked: pick up the next piece of work.
+
+**Landing a slice in the user's own checkout follows their branch convention, not
+`ds/<slug>`.** The `ds/` branch is the sandbox's; merging or renaming into their tree uses
+whatever naming their instructions set. And do not push — landing work locally and
+publishing it are separate decisions, and the second one is theirs.
 
 ## Do not put any of this in memory
 
@@ -272,13 +282,58 @@ What does belong in memory is what the package cannot know: what the user decide
 why, the constraints of their project, the facts you would otherwise have to rediscover.
 Not the contents of this file.
 
-## Report once
+## Report each slice, narrate nothing
 
-Say who is doing what at the moment you decide it — one line, with the reason — then go
-quiet and work. Do not narrate each handoff, each round trip and each review as it
-happens: a running commentary is context you pay to re-read on every later API call, and
-it asks the user to supervise a decision you were asked to own.
+Two different things get confused here, and confusing them is expensive in opposite
+directions.
 
-One report at the end: what was built, what you kept and why, what the implementer did
-and which of its recorded decisions you reversed, what you verified and how, and anything
-left out. Interrupt mid-flight only when something blocks on the user's judgement.
+**Narration is waste.** «Writing the brief now», «the run has started», «it is on round
+two» — none of it is information, and all of it is context you pay to re-read on every
+later API call. Say nothing about process.
+
+**A landed result is not narration.** When a slice lands, say so in one line: what now
+works, how it was verified, how big it was. That is the only moment the user can redirect
+before more code is built on a decision, and it costs a sentence. Reported from real use:
+a feature went down as one handoff and came back as 4 commits across 24 files, roughly
+470 lines, with nothing visible in between — and the review then reversed two decisions,
+so the repair round was nearly as large as the work. Both halves of that were avoidable,
+and neither was avoidable at the end.
+
+So after every slice, one line:
+
+```
+✓ directional scoring — 1 commit, 6 files, `npm test -- scoring` green. Next: suggestion tier.
+```
+
+Then a short close at the end: what was built, what you kept and why, which of the
+implementer's recorded decisions you reversed, what you verified, what you left out.
+Interrupt mid-slice only when something blocks on the user's judgement.
+
+## A slice is one observable result
+
+This is the ceiling the size gate was missing. There is a floor — under ~25 lines, keep it
+— and for a long time nothing on the other side, so a whole feature could go down as one
+brief and be correct by every rule in this file.
+
+**One slice produces one result the user can see: one commit, one test command that goes
+green, one named change in behaviour.** Not «the feature». If you cannot write that single
+line of result in advance, you are holding more than one slice.
+
+Practical tripwires. Any of these means split it, and splitting is cheap:
+
+- the brief names more than one behaviour, or its verify needs more than one command
+- you expect it to touch more than a handful of files
+- it contains the word «and» between two things that could land separately
+- a decision inside it might be wrong, and the rest of the work sits on top of that
+  decision
+
+**Make the reversible-at-a-glance part the first slice.** When a design has a call you are
+not sure of — a pricing rule, which component owns a lookup — the first slice is the
+thinnest one that proves it, and it lands on its own. Reversing a decision after one small
+commit is a note; reversing it after 470 lines costs the whole round again. The point of
+going first with the uncertain part is not tidiness, it is that being wrong stays cheap.
+
+**Sequential by default. Parallel only once nothing is still in question.** Fanning out is
+genuinely cheaper for work whose decisions are all settled and whose files do not overlap —
+but every slice in flight is a slice nobody has looked at, so parallelism trades visibility
+for throughput. Take that trade deliberately, on settled work, not by habit.

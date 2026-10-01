@@ -197,6 +197,20 @@ cmd_review() { # review <slug>  — deliberately small output; never the log
   # The tooling's own files are not part of the change, and one of them is a file
   # this prompt asks the implementer to create — so the mistake is easy to make and
   # easy to miss in a diffstat. Name it here rather than hoping the reviewer looks.
+  # A slice is meant to be one observable result. Nothing measured that until now, and
+  # one handoff came back as 4 commits over 24 files — reviewed in a lump, with two
+  # decisions reversed afterwards, so the repair round was nearly as large. Say the size
+  # out loud at the point where it is still cheap to split the next one.
+  local nf nl
+  nf=$(git -C "$wt" diff --name-only "$base...HEAD" | wc -l)
+  nl=$(git -C "$wt" diff --shortstat "$base...HEAD" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)
+  if [ "$nf" -gt "${DELEGATE_SLICE_FILES:-8}" ] || [ "${nl:-0}" -gt "${DELEGATE_SLICE_LINES:-250}" ]; then
+    echo "
+-- oversized for one slice: $nf files, ${nl:-0} insertions --
+This was more than one observable result, so the review is a lump and a reversed decision
+costs the whole round. Split the next handoff: one commit, one verify, one named change."
+  fi
+
   local strays
   strays=$(git -C "$wt" diff --name-only "$base...HEAD" \
            | grep -xE 'VERIFY|TASK\.md|REVIEW\.md|BLOCKED\.md' || true)
