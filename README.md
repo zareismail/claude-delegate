@@ -29,7 +29,11 @@ or that the task is not one to delegate — see [What not to do](#what-not-to-do
 
 Check your opencode config too: a global `"model"` in `~/.config/opencode/opencode.json(c)`
 is what a bare `opencode run` falls back to, and it is easy to leave pointed at an
-expensive model.
+expensive model. Requires opencode 2.x.
+
+Behind a proxy: set the provider's `options.baseURL` in that file to a local relay (for
+example `http://127.0.0.1:18787`). If the relay is not answering when a task starts,
+`delegate` runs `deepseek-proxy on` (or `$DELEGATE_PROXY on`) to bring it back up.
 
 ## Routing happens without being asked
 
@@ -117,6 +121,7 @@ it spins.
 | `DELEGATE_VARIANT` | `low` | reasoning effort. Measured on an identical brief: low 37s/$0.0040, high 56s/$0.0047, both passing |
 | `DELEGATE_MAX_ROUNDS` | `4` | runaway backstop for repair rounds |
 | `DELEGATE_FORCE` | unset | bypass the repair guards |
+| `DELEGATE_PROXY` | `deepseek-proxy` | script run as `<script> on` when the provider's local `baseURL` relay is down |
 | `DELEGATE_HOME` | `~/.delegate` | where worktrees and logs live |
 | `DELEGATE_TIMEOUT` | `3600` | seconds per run |
 | `DELEGATE_DRIFT_LINES` | `120` | hand-written lines since the last handoff before the drift check speaks |

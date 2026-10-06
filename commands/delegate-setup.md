@@ -11,8 +11,8 @@ short table of what passed and what did not.
    to their shell profile — do not edit their profile yourself.
 3. Check `opencode --version` resolves. If not, point them at
    https://opencode.ai and stop; nothing else will work without it.
-4. Check the configured model answers: `timeout 60 opencode models deepseek`
-   (or whichever provider `DELEGATE_MODEL` names). A provider with no API key
+4. Check the configured model is listed: `timeout 60 opencode models | grep '^deepseek/'`
+   (or whichever provider `DELEGATE_MODEL` names). This needs opencode 2.x. A provider with no API key
    configured is the most common setup failure — say so plainly if it fails.
 5. Run `delegate ls` to confirm the command works end to end. An empty board is
    the correct result on a fresh install.

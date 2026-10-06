@@ -73,13 +73,40 @@ warn_divergence() {
 fork_of() { git -C "$1" rev-parse "$(git -C "$1" config --get "branch.$(git -C "$1" branch --show-current).delegateBase")" 2>/dev/null \
             || base_of "$1"; }
 
+# opencode reaches DeepSeek through a local relay when its config points the
+# provider's baseURL at one (deepseek-proxy, which sends it through v2ray). The
+# relay is a plain background process and does not survive a reboot, while the
+# config does — and a dead relay comes back as a bare connection error. Bring
+# it up before the run. DELEGATE_PROXY names the script that starts it.
+need_endpoint() {
+  local url hp host port proxy=${DELEGATE_PROXY:-deepseek-proxy} prov=${MODEL%%/*}
+  url=$(jq -r --arg p "$prov" '.provider[$p].options.baseURL // empty' \
+        "$HOME/.config/opencode/opencode.json" 2>/dev/null || true)
+  case "$url" in http://127.0.0.1:*|http://localhost:*) ;; *) return 0 ;; esac
+  hp=${url#http://}; hp=${hp%%/*}; host=${hp%:*}; port=${hp##*:}
+  up() { (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null; }
+  up && return 0
+  command -v "$proxy" >/dev/null 2>&1 \
+    || die "$prov's baseURL $url is not answering, and '$proxy' is not on PATH to start it. Run your relay, or set DELEGATE_PROXY to the script that starts it."
+  echo "delegate: $url is down — starting it with '$proxy on'" >&2
+  "$proxy" on >&2 || die "'$proxy on' failed; opencode cannot reach $url"
+  up || die "'$proxy on' ran but $url still does not answer"
+}
+
 run() { # run <worktree> <prompt> [extra opencode opts...]
   local wt=$1 prompt=$2 rc=0 log; shift 2
+  need_endpoint
+  # One opencode session per task, so a rework resumes this task's conversation
+  # and not whichever session ran last — opencode 2 runs every session through
+  # one background service, and its -c means "last", not "last here".
+  [ -s "$wt/.session" ] || echo "ses_delegate_$(basename "$wt" | tr -c 'A-Za-z0-9_\n' _)_$(date +%s)" >"$wt/.session"
   log="$ROOT/logs/$(basename "$wt")-$(date +%s).log"
   echo "delegate: $wt"
   echo "delegate: log $log  (model $MODEL, effort $VARIANT)"
-  timeout "$TIMEOUT" opencode run --dir "$wt" --auto -m "$MODEL" --variant "$VARIANT" "$@" "$prompt" \
-    >"$log" 2>&1 || rc=$?
+  # opencode 2 dropped --dir and --variant: the project is the working
+  # directory, and the effort rides on the model as provider/model#variant.
+  ( cd "$wt" && exec timeout "$TIMEOUT" opencode run --auto -s "$(cat "$wt/.session")" \
+      -m "$MODEL#$VARIANT" "$@" "$prompt" ) </dev/null >"$log" 2>&1 || rc=$?
   echo "delegate: opencode exit $rc"
   # A provider renames things under you. opencode 1.18.32 turned
   # deepseek-v4-flash into deepseek-flash, and the dead id came back as a
@@ -88,9 +115,9 @@ run() { # run <worktree> <prompt> [extra opencode opts...]
   # pays for the lookup.
   if [ "$rc" -ne 0 ]; then
     local prov=${MODEL%%/*}
-    if ! opencode models "$prov" 2>/dev/null | grep -qx -- "$MODEL"; then
+    if ! opencode models 2>/dev/null | grep -qx -- "$MODEL"; then
       echo "delegate: '$MODEL' is no longer in $prov's catalog. It now offers:"
-      opencode models "$prov" 2>/dev/null | sed 's/^/delegate:   /'
+      opencode models 2>/dev/null | grep "^$prov/" | sed 's/^/delegate:   /'
       echo "delegate: set DELEGATE_MODEL to one of those."
     fi
   fi
@@ -177,8 +204,8 @@ cmd_rework() { # rework <slug>   (review notes on stdin)
   fi
 
   cat > "$wt/REVIEW.md"
-  # Names both files, so this works whether or not -c resumes the old session.
-  run "$wt" "Read TASK.md and REVIEW.md in the root of this directory. TASK.md is your original task; REVIEW.md is what is wrong with the work you did. Fix every point in REVIEW.md, then verify again exactly as TASK.md says." -c
+  # Names both files, so this works even if the old session is gone.
+  run "$wt" "Read TASK.md and REVIEW.md in the root of this directory. TASK.md is your original task; REVIEW.md is what is wrong with the work you did. Fix every point in REVIEW.md, then verify again exactly as TASK.md says."
 }
 
 cmd_review() { # review <slug>  — deliberately small output; never the log
@@ -213,13 +240,13 @@ costs the whole round. Split the next handoff: one commit, one verify, one named
 
   local strays
   strays=$(git -C "$wt" diff --name-only "$base...HEAD" \
-           | grep -xE 'VERIFY|TASK\.md|REVIEW\.md|BLOCKED\.md' || true)
+           | grep -xE 'VERIFY|TASK\.md|REVIEW\.md|BLOCKED\.md|\.session' || true)
   [ -n "$strays" ] && echo "
 -- tooling files committed (should not be in the change) --
 $strays"
   echo
   echo "-- uncommitted --"
-  git -C "$wt" status --porcelain | grep -v ' TASK.md$\| REVIEW.md$' || echo "(clean)"
+  git -C "$wt" status --porcelain | grep -v ' TASK.md$\| REVIEW.md$\| .session$' || echo "(clean)"
 }
 
 cmd_check() { # check <slug> — run the implementer's own verify, bounded output
