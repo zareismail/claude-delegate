@@ -97,16 +97,28 @@ run() { # run <worktree> <prompt> [extra opencode opts...]
   local wt=$1 prompt=$2 rc=0 log; shift 2
   need_endpoint
   # One opencode session per task, so a rework resumes this task's conversation
-  # and not whichever session ran last — opencode 2 runs every session through
-  # one background service, and its -c means "last", not "last here".
-  [ -s "$wt/.session" ] || echo "ses_delegate_$(basename "$wt" | tr -c 'A-Za-z0-9_\n' _)_$(date +%s)" >"$wt/.session"
+  # and not whichever session ran last (-c means "last", not "last here").
+  # opencode only continues a session that already exists: `-s <made-up id>`
+  # fails with "Session not found". So the first run starts a fresh session
+  # under a unique title, and its real id is looked up and kept in .session.
+  # Ids written by 1.6.1 (ses_delegate_*) were never real; start fresh.
+  local sid="" title="delegate:$(basename "$wt"):$(date +%s)" sess=()
+  [ -s "$wt/.session" ] && sid=$(cat "$wt/.session")
+  case "$sid" in ses_delegate_*) sid="" ;; esac
+  if [ -n "$sid" ]; then sess=(-s "$sid"); else sess=(--title "$title"); fi
+  # Effort: the --variant flag where opencode has it, else model#variant.
+  local model=(-m "$MODEL" --variant "$VARIANT")
+  opencode run --help 2>&1 | grep -q -- '--variant' || model=(-m "$MODEL#$VARIANT")
   log="$ROOT/logs/$(basename "$wt")-$(date +%s).log"
   echo "delegate: $wt"
   echo "delegate: log $log  (model $MODEL, effort $VARIANT)"
-  # opencode 2 dropped --dir and --variant: the project is the working
-  # directory, and the effort rides on the model as provider/model#variant.
-  ( cd "$wt" && exec timeout "$TIMEOUT" opencode run --auto -s "$(cat "$wt/.session")" \
-      -m "$MODEL#$VARIANT" "$@" "$prompt" ) </dev/null >"$log" 2>&1 || rc=$?
+  ( cd "$wt" && exec timeout "$TIMEOUT" opencode run --auto "${sess[@]}" \
+      "${model[@]}" "$@" "$prompt" ) </dev/null >"$log" 2>&1 || rc=$?
+  if [ -z "$sid" ]; then
+    sid=$(opencode session list -n 50 --format json 2>/dev/null \
+          | jq -r --arg t "$title" 'map(select(.title == $t)) | .[0].id // empty' 2>/dev/null || true)
+    if [ -n "$sid" ]; then echo "$sid" >"$wt/.session"; else : >"$wt/.session"; fi
+  fi
   echo "delegate: opencode exit $rc"
   # A provider renames things under you. opencode 1.18.32 turned
   # deepseek-v4-flash into deepseek-flash, and the dead id came back as a
