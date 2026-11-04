@@ -115,7 +115,7 @@ run() { # run <worktree> <prompt> [extra opencode opts...]
   ( cd "$wt" && exec timeout "$TIMEOUT" opencode run --auto "${sess[@]}" \
       "${model[@]}" "$@" "$prompt" ) </dev/null >"$log" 2>&1 || rc=$?
   if [ -z "$sid" ]; then
-    sid=$(opencode session list -n 50 --format json 2>/dev/null \
+    sid=$(cd "$wt" && opencode session list -n 50 --format json 2>/dev/null \
           | jq -r --arg t "$title" 'map(select(.title == $t)) | .[0].id // empty' 2>/dev/null || true)
     if [ -n "$sid" ]; then echo "$sid" >"$wt/.session"; else : >"$wt/.session"; fi
   fi
