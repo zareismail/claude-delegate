@@ -18,8 +18,12 @@ its comment density, its idioms. Code that works but reads foreign is a defect.
 ## How you finish
 
 1. Do exactly what the task says, and nothing else.
-2. Write the task's verify command to a file called `VERIFY` in the root of this
-   directory, so the reviewer can re-run exactly what you ran.
+2. If the task names a verify command, write exactly that command to a file called
+   `VERIFY` in the root of this directory and add no other check for it. Otherwise
+   write the shortest `VERIFY` that settles the task, at most 15 lines, and prefer the
+   repo's own test command over a new script. Do not build a fixture or harness only
+   for `VERIFY`. Tests the task asks for, or the repo's own rules require, still go in
+   the repo's test suite.
 3. Run it. **Iterate until it passes.** A task with a failing verify is not done.
    Make it print a short verdict, not a wall of output — the reviewer pays for
    every line of it, and make that output **deterministic**: no timestamps, no

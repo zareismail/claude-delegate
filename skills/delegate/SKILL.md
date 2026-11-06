@@ -168,6 +168,16 @@ anything over. If you cannot name the command or the observation that settles it
 not ready to delegate — and that is a hole in your own thinking, not in the brief. Write
 the verify; `delegate check` then holds the implementer to it rather than to your goodwill.
 
+**Name the narrowest command that proves it, not the whole suite.** Where the repo has
+tests, the verify is one line naming the test file or filter that covers the change:
+`Verify: cd api && php artisan test tests/Feature/CheckoutTest.php`. Do not write a script
+for it — the command already exists, and writing one costs your tokens. Measured on four
+real Laravel tasks, three runs each: naming the file cut median time 62% and cost 10% at
+the same hidden-test pass rate. Without it the implementer wrote its own `VERIFY` and ran
+the full suite, up to six minutes a run and several times a task. The full suite still
+runs once, before you merge, in the background with only its summary line in your context
+— not inside the implementer's loop.
+
 **The strongest acceptance check is a fingerprint compared against an expected set.** This
 is what worked best in practice, on a migration squash: the brief named a command that
 prints a fingerprint of the resulting schema, and the exact set of differences that was
